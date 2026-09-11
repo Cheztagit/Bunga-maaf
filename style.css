@@ -166,6 +166,7 @@ button {
   user-select: none;
   -webkit-user-select: none;
   animation: dragWobble 0.6s ease-in-out infinite alternate;
+  will-change: transform;
 }
 
 .bouquet svg {
@@ -177,8 +178,7 @@ button {
 
 .bouquet.dragging {
   cursor: grabbing;
-  transition: filter 0.3s ease;
-  filter: drop-shadow(0 30px 34px rgba(30, 15, 50, 0.45));
+  transition: none;
   animation: dragWobble 0.8s ease-in-out infinite alternate;
 
 }
