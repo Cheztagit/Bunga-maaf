@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => p.remove(), lifetime);
   }
 
-  for (let i = 0; i < 60; i++) spawnPetal(true);
+  for (let i = 0; i < 35; i++) spawnPetal(true);
   setInterval(() => spawnPetal(false), 100);
 
   /* ------------------------------------------------------------------ *
