@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </defs>`;
 
     return `<svg viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg">` +
-           defs + handle + fan + roses + ribbon + butterfly +
+           defs + handle + fan + roses + butterfly +
            `</svg>`;
   }
 
