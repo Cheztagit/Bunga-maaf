@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Buket Biru untuk Kak Nadya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="petal-field" aria-hidden="true"></div>
+
+  <main id="stage">
+
+    <!-- ===================== SCENE 1 — TAMAN (drag ke keranjang) ===================== -->
+    <section id="scene-garden" class="scene is-active">
+
+      <div class="question-card" id="questionCard">
+        <p class="question-card__title">Ada bunga buat kak Nadya, apa kak Nadya mau?</p>
+        <p class="question-card__hint">Geser buketnya ke keranjang di pojok kanan bawah, yuk</p>
+      </div>
+
+      <div id="bouquet" class="bouquet" tabindex="0" role="button" aria-label="Seret buket bunga ke keranjang"></div>
+
+      <div id="sparkleLayer" class="sparkle-layer" aria-hidden="true"></div>
+      <div id="yeayText" class="yeay-text" aria-hidden="true">Yeay!</div>
+
+      <div id="basket" class="basket" aria-hidden="true">
+        <div class="basket__ring"></div>
+        <svg class="basket__svg" viewBox="0 0 220 190" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="basketWeave" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#C98A4B"/>
+              <stop offset="100%" stop-color="#9A5F2C"/>
+            </linearGradient>
+          </defs>
+          <path d="M35,70 L20,175 Q110,196 200,175 L185,70 Z" fill="url(#basketWeave)" stroke="#7A4A22" stroke-width="3"/>
+          <g stroke="#7A4A22" stroke-width="2.5" opacity="0.55" fill="none">
+            <path d="M24,92 Q110,112 196,92"/>
+            <path d="M22,114 Q110,136 198,114"/>
+            <path d="M21,138 Q110,160 199,138"/>
+            <path d="M27,160 Q110,180 193,160"/>
+          </g>
+          <path d="M32,70 Q110,92 188,70 L192,54 Q110,74 28,54 Z" fill="#E4A96A" stroke="#7A4A22" stroke-width="3"/>
+          <path d="M60,54 Q65,10 110,10 Q155,10 160,54" fill="none" stroke="#9A5F2C" stroke-width="8" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+    </section>
+
+    <!-- ===================== SCENE 2 — PENGANTARAN ===================== -->
+    <section id="scene-delivery" class="scene">
+
+      <div class="sky">
+        <div class="cloud cloud--1"></div>
+        <div class="cloud cloud--2"></div>
+        <div class="cloud cloud--3"></div>
+      </div>
+
+      <div class="house">
+        <div class="house__vine"></div>
+        <div class="house__chimney"></div>
+        <div class="house__roof"></div>
+        <div class="house__body">
+          <div class="house__window"></div>
+          <div class="house__door"></div>
+        </div>
+        <div class="house__pot"></div>
+      </div>
+
+      <div id="deliveredBouquet" class="delivered-bouquet" aria-hidden="true">
+        <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+          <path d="M50,95 L20,45 Q50,-5 80,45 Z" fill="#171420"/>
+          <circle cx="50" cy="42" r="17" fill="#3F6DE8"/>
+          <circle cx="34" cy="52" r="13" fill="#2C55C9"/>
+          <circle cx="66" cy="52" r="13" fill="#2C55C9"/>
+          <circle cx="50" cy="42" r="8" fill="#8FB2FF"/>
+        </svg>
+      </div>
+
+      <div class="road"></div>
+
+      <div id="truck" class="truck">
+        <div class="truck__shadow"></div>
+        <div class="truck__cargo">
+          <div class="truck__peek">
+            <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="30" cy="26" r="14" fill="#3F6DE8"/>
+              <circle cx="18" cy="34" r="10" fill="#2C55C9"/>
+              <circle cx="42" cy="34" r="10" fill="#2C55C9"/>
+              <circle cx="30" cy="24" r="6" fill="#9DBBFF"/>
+            </svg>
+          </div>
+          <div class="truck__emblem">♥</div>
+        </div>
+        <div class="truck__cab">
+          <div class="truck__window"></div>
+        </div>
+        <div class="truck__wheel truck__wheel--1"></div>
+        <div class="truck__wheel truck__wheel--2"></div>
+      </div>
+
+      <div id="deliveryMessage" class="delivery-message">
+        <p class="delivery-message__title">Buketnya bakal dikirim ke rumah kak Nadya</p>
+        <p class="delivery-message__sub">Love you kak Nadya</p>
+        <button id="restartBtn" class="delivery-message__btn" type="button">Whatsapp Aku ya</button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+  <audio id="myAudio" loop src="bunga maaf.mp3"></audio>
+  <script>
+  document.addEventListener("click", function() {
+    const audio = document.getElementById("myAudio");
+    audio.play();
+  }, { once: true });
+</script>
+</body>
+</html>
