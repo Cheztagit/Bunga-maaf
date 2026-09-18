@@ -43,7 +43,7 @@ const KONTEN = {
   -------------------------------------------------------------------- */
   kunci: {
     aktif: true,
-    namaDiizinkan: ["nadya", "Nadya" , "nara", "Nara", "Nadia"],
+    namaDiizinkan: ["nadya", "Nadya" , "nara", "Nara", "Nadia", "Pirjak"],
     namaTampil: "Nadya",
     pesanSalah: "AKSES DITOLAK · PESAN INI BUKAN BUAT KAMU",
     pesanKosong: "ISI NAMANYA DULU DONG"
