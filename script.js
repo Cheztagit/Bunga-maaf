@@ -1,381 +1,942 @@
-/* =========================================================================
-   Buket Biru untuk Kak Nadya — interaction logic
-   ========================================================================= */
+/* ==========================================================================
+   ★★★ SEMUA TULISAN YANG BISA KAMU GANTI ADA DI SINI ★★★
+   --------------------------------------------------------------------------
+   Kamu cuma perlu ngedit blok KONTEN di bawah ini. Sisa file di bawahnya
+   nggak usah disentuh. Tulis {nama} di mana pun kalau mau nama pacarmu
+   muncul otomatis di situ.
+   ========================================================================== */
+const KONTEN = {
 
-document.addEventListener('DOMContentLoaded', () => {
+  /* --- 0. GERBANG NAMA (cuma satu nama yang boleh masuk) --------------
+     aktif        : true = wajib isi nama yang cocok. false = siapa pun boleh masuk.
+     namaDiizinkan: daftar tulisan yang kamu terima. Isi lebih dari satu kalau
+                    mau jaga-jaga dia ngetik panggilan yang beda, contoh:
+                    ["nabila", "bila", "dek bila"]
+                    Huruf besar/kecil & spasi berlebih diabaikan otomatis.
+     namaTampil   : nama yang dipakai di seluruh website, apa pun yang dia ketik.
+                    Kosongkan ("") kalau mau pakai persis yang dia ketik.
+     pesanSalah   : muncul kalau namanya nggak cocok.
+     pesanKosong  : muncul kalau inputnya dibiarkan kosong.
+  -------------------------------------------------------------------- */
+  kunci: {
+    aktif: true,
+    namaDiizinkan: ["nadya" , "Nadya" , "nara" , "Nara" , "Nadia"],
+    namaTampil: "Nadya",
+    pesanSalah: "AKSES DITOLAK · PESAN INI BUKAN BUAT KAMU",
+    pesanKosong: "ISI NAMANYA DULU DONG"
+  },
 
-  /* ------------------------------------------------------------------ *
-   *  1. FALLING PETALS
-   * ------------------------------------------------------------------ */
+  /* --- 1. Teks hujan kode di background ------------------------------- */
+  frasaHujan: [
+    "I LOVE YOU ♡", "SAYANGKU ♥", "SEMANGAT YA ✦",
+    "AKU NUNGGUIN KAMU ♡", "AKU KANGEN ✨", "AKU BUATIN BUAT KAMU ♥",
+    "NIKAHIN AKU YA ♡", "SEMUANYA BUAT KAMU ✦", "FOREVER BARENG AKU YA? ♥",
+    "I MISS YOU SAYANG ♡", "MAKASIH UDAH NEMENIN ♥", "KITA BAKAL KETEMU KAN? ♥",
+    "AKU ADA DI TANGANMU SAYANG ✦", "HATIKU BUATMU ♡", "JANGAN TINGGALIN AKU ✦"
+  ],
 
-  const petalField = document.getElementById('petal-field');
+  /* Tambahan frasa yang menyertakan nama. {nama} otomatis diganti. */
+  frasaHujanBernama: [
+    "I LOVE YOU {nama} ♡",
+    "{nama} SAYANGKU ♥",
+    "SEMANGAT YA {nama} ✦",
+    "{nama} NIKAHIN AKU YA ✨",
+    "AKU KANGEN {nama} ♡"
+  ],
 
-  function spawnPetal(seed) {
-    const p = document.createElement('span');
-    const roll = Math.random();
-    p.className = 'petal' + (roll < 0.30 ? ' is-blue' : roll < 0.60 ? ' is-gold' : '');
+  /* --- 2. Adegan cerita saat dekripsi ---------------------------------
+     Mau nambah adegan? Tinggal copy satu blok { ... } dan taruh di bawahnya.
+     pill    = label kecil di atas
+     label   = tulisan di bar progress bawah
+     persen  = 0-100
+     teks    = kalimat besar yang muncul huruf per huruf
+     bpm     = detak jantung di HUD atas
+     jeda    = jeda setelah kalimat selesai (milidetik)
+  --------------------------------------------------------------------- */
+  adegan: [
+    {
+      pill: "✨ ADA PESAN MASUK",
+      label: "MEMBACA PERASAAN [20%]",
+      persen: 20,
+      teks: "MAAF YA...",
+      bpm: 88,
+      durasi: 900,
+      jeda: 750
+    },
+    {
+      pill: "💭 ISI KEPALA TERDETEKSI",
+      label: "MEMBUKA MEMORI [45%]",
+      persen: 45,
+      teks: "AKU LAGI MIKIRIN KAMU.",
+      bpm: 105,
+      durasi: 1200,
+      jeda: 850
+    },
+    {
+      pill: "🔒 MEMBUKA KUNCI ENKRIPSI",
+      label: "KEMURNIAN PERASAAN 99.8% [70%]",
+      persen: 70,
+      teks: "DAN ADA SESUATU...",
+      bpm: 125,
+      durasi: 1050,
+      jeda: 750
+    },
+    {
+      pill: "💌 KHUSUS UNTUK {nama}",
+      pillTanpaNama: "💌 PESAN INTI SIAP",
+      label: "MENYELARASKAN DETAK JANTUNG [88%]",
+      persen: 88,
+      teks: "YANG HARUS BANGET AKU BILANG, {nama}...",
+      teksTanpaNama: "YANG HARUS BANGET AKU BILANG...",
+      bpm: 145,
+      durasi: 1200,
+      jeda: 900
+    }
+  ],
 
-    const size = 10 + Math.random() * 15;
-    const duration = 10 + Math.random() * 8;
+  /* --- 3. Kata pamungkas yang muncul satu per satu -------------------- */
+  pillFinal: "💖 AKSES PENUH DIBERIKAN",
+  labelFinal: "DEKRIPSI SELESAI [100%]",
+  bpmFinal: 160,
+  kataPamungkas: [
+    { teks: "AKU",     partikel: 16, jeda: 500 },
+    { teks: "SAYANG",  partikel: 22, jeda: 500 },
+    { teks: "KAMU ♥",  partikel: 28, jeda: 700 }
+  ],
+  /* Nama pacarmu ikut muncul sebagai kata terakhir. Kosongkan kalau nggak mau. */
+  kataNama: "{nama} ♡",
 
-    p.style.width = size + 'px';
-    p.style.height = size + 'px';
-    p.style.left = Math.random() * 100 + '%';
-    p.style.setProperty('--drift', (Math.random() * 140 - 70).toFixed(0) + 'px');
-    p.style.animationDuration = duration.toFixed(2) + 's';
-    p.style.animationDelay = seed
-      ? '-' + (Math.random() * duration).toFixed(2) + 's'
-      : (Math.random() * 0.8).toFixed(2) + 's';
+  /* --- 4. Layar terakhir (hati 3D) ------------------------------------ */
+  tagAkhir: "-DEKRIPSI SELESAI- · 100% TERBUKA",
+  bannerAkhir: "I LOVE YOU",
+  namaAkhir: "UNTUK {nama} ♡",
+  namaAkhirTanpaNama: "SELAMANYA MILIKMU ♡",
+  dedikasi: "\"Kode - kode ini tidak akan bisa menyamai cintaku sayang,<br>tolong ya, stay bareng aku selamanya.\"",
+  petunjuk: "✨ Gerakin kursor / miringin HP buat muterin hati · Tap buat kirim cinta",
 
-    petalField.appendChild(p);
-    const lifetime = (seed ? duration : duration + 0.6) * 1000;
-    setTimeout(() => p.remove(), lifetime);
-  }
+  /* --- 5. Tombol-tombol ----------------------------------------------- */
+  tombolMulai: "MULAI DEKRIPSI ❯",
+  tombolPulse: "💓 Love buat mu sayang",
+  tombolStar: "✨ Tambahan",
+  tombolShare: "🔗 Nih pamer aja kalo mau",
 
-  for (let i = 0; i < 35; i++) spawnPetal(true);
-  setInterval(() => spawnPetal(false), 100);
+  /* --- 6. Layar pertama ------------------------------------------------ */
+  tagAwal: "PROTOCOL · SAYANG_AKU_NGGAK?",
+  judulAwal: "PESAN TERENKRIPSI",
+  subjudulAwal: "DATA LEVEL-TINGGI HANYA BISA DIBUKA OLEH SESEORANG YANG KHUSUS",
+  labelInput: "MASUKAN NAMA SAMARAN:",
+  placeholderInput: "Masukan nickname atau nama samaran",
 
-  /* ------------------------------------------------------------------ *
-   *  2. BUILD THE BOUQUET (generated SVG)
-   * ------------------------------------------------------------------ */
+  /* --- 7. Notifikasi & HUD --------------------------------------------- */
+  statusSistem: "SISTEM ONLINE",
+  pillAwal: "- Mendekripsi -",
+  labelProgresAwal: "MENGINISIALISASI KODE [0%]",
+  audioNyala: "🔊 AUDIO ON",
+  audioMati: "🔇 AUDIO OFF",
+  toastPulse: "💓 Detak jantungnya nyampe ke kamu!",
+  toastStar: "✨ Hujan bintang buat kamu!",
+  toastShare: "✓ Link-nya udah kesalin, tinggal kirim!",
 
-  function petalPath(len, wid) {
-    const w = (wid / 2).toFixed(1);
-    const l = len.toFixed(1);
-    const mid = (len * 0.72).toFixed(1);
-    return `M0,0 C -${w},-${(len * 0.26).toFixed(1)} -${(w * 0.9).toFixed(1)},-${mid} 0,-${l} ` +
-           `C ${(w * 0.9).toFixed(1)},-${mid} ${w},-${(len * 0.26).toFixed(1)} 0,0 Z`;
-  }
+  /* --- 8. Simbol partikel yang beterbangan ----------------------------- */
+  simbolPartikel: ["♥", "♡", "💖", "✨", "✦", "1", "0", "🌸"]
+};
 
-  function makeSpike(angleDeg, len, wid, fill, stroke, strokeWidth) {
-    return `<g transform="rotate(${angleDeg.toFixed(1)})">` +
-           `<path d="${petalPath(len, wid)}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>` +
-           `</g>`;
-  }
+/* Ganti {nama} dengan nama yang diketik. Jangan diubah. */
+function isi(teks, nama) {
+  if (!teks) return "";
+  return teks.replace(/\{nama\}/g, (nama || "").toUpperCase());
+}
 
-  function makeRose(cx, cy, scale, tilt) {
-    let g = `<g transform="translate(${cx},${cy}) rotate(${tilt}) scale(${scale})">`;
+/* ==========================================================================
+   ↓↓↓ DI BAWAH SINI MESIN-NYA, NGGAK PERLU DIUBAH ↓↓↓
+   ========================================================================== */
 
-    const outerCount = 7;
-    for (let i = 0; i < outerCount; i++) {
-      const angle = i * (360 / outerCount) + (Math.random() * 6 - 3);
-      g += `<g transform="rotate(${angle.toFixed(1)})">` +
-           `<path d="${petalPath(46, 30)}" fill="url(#roseOuter)" stroke="#0C1E63" stroke-width="1.1" stroke-opacity="0.35"/>` +
-           `</g>`;
+let audioCtx = null;
+let soundEnabled = true;
+let ambientOsc1 = null, ambientOsc2 = null, ambientGain = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) audioCtx = new AudioContextClass();
+    }
+    if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+    if (soundEnabled && !ambientGain) {
+        startAmbientDrone();
+    }
+}
+
+function startAmbientDrone() {
+    if (!audioCtx || !soundEnabled) return;
+    try {
+        ambientGain = audioCtx.createGain();
+        ambientGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        ambientGain.gain.exponentialRampToValueAtTime(0.035, audioCtx.currentTime + 2.5);
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(450, audioCtx.currentTime);
+
+        ambientOsc1 = audioCtx.createOscillator();
+        ambientOsc1.type = "sine";
+        ambientOsc1.frequency.setValueAtTime(130.81, audioCtx.currentTime); // C3
+
+        ambientOsc2 = audioCtx.createOscillator();
+        ambientOsc2.type = "triangle";
+        ambientOsc2.frequency.setValueAtTime(196.00, audioCtx.currentTime); // G3
+
+        ambientOsc1.connect(filter);
+        ambientOsc2.connect(filter);
+        filter.connect(ambientGain);
+        ambientGain.connect(audioCtx.destination);
+
+        ambientOsc1.start();
+        ambientOsc2.start();
+    } catch(e) {}
+}
+
+function boostAmbientHarmonics() {
+    if (!ambientGain || !audioCtx) return;
+    try {
+        ambientGain.gain.exponentialRampToValueAtTime(0.07, audioCtx.currentTime + 1.5);
+    } catch(e) {}
+}
+
+function playKeyClick(freq = 900) {
+    if (!audioCtx || !soundEnabled) return;
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq + (Math.random() * 160 - 80), audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.025, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.035);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.04);
+        setTimeout(() => { osc.disconnect(); gain.disconnect(); }, 100);
+    } catch (e) {}
+}
+
+function playHeartbeatThump() {
+    if (navigator.vibrate) {
+        navigator.vibrate([30, 40, 50]);
+    }
+    if (!audioCtx || !soundEnabled) return;
+    try {
+        [0, 0.11].forEach((offset, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(idx === 0 ? 80 : 65, audioCtx.currentTime + offset);
+            osc.frequency.exponentialRampToValueAtTime(28, audioCtx.currentTime + offset + 0.2);
+            gain.gain.setValueAtTime(idx === 0 ? 0.3 : 0.22, audioCtx.currentTime + offset);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + offset + 0.22);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + offset);
+            osc.stop(audioCtx.currentTime + offset + 0.24);
+            setTimeout(() => { osc.disconnect(); gain.disconnect(); }, 400);
+        });
+    } catch (e) {}
+}
+
+function playCelestialChimes() {
+    if (!audioCtx || !soundEnabled) return;
+    try {
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.08);
+            gain.gain.setValueAtTime(0.07, audioCtx.currentTime + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + idx * 0.08 + 2.2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + idx * 0.08);
+            osc.stop(audioCtx.currentTime + idx * 0.08 + 2.3);
+            setTimeout(() => { osc.disconnect(); gain.disconnect(); }, 2600);
+        });
+    } catch (e) {}
+}
+
+/* ==========================================================================
+   TOP ECG MONITOR (Ultra-Lightweight 60fps)
+   ========================================================================== */
+const ecgCanvas = document.getElementById("ecgCanvas");
+const ecgCtx = ecgCanvas ? ecgCanvas.getContext("2d") : null;
+const bpmCounter = document.getElementById("bpmCounter");
+let currentBpm = 72;
+let targetBpm = 72;
+let ecgPoints = [];
+
+function drawECG() {
+    if (!ecgCtx) return;
+    currentBpm += (targetBpm - currentBpm) * 0.04;
+    if (bpmCounter) bpmCounter.textContent = Math.round(currentBpm) + " BPM";
+
+    ecgCtx.fillStyle = "rgba(0, 0, 0, 0.25)";
+    ecgCtx.fillRect(0, 0, ecgCanvas.width, ecgCanvas.height);
+
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || "#ff2a8d";
+    ecgCtx.strokeStyle = primaryColor;
+    ecgCtx.lineWidth = 1.5;
+
+    const time = Date.now() * 0.008 * (currentBpm / 72);
+    const mod = time % 12;
+    let y = 10;
+
+    if (mod > 4 && mod < 5) y = 4;
+    else if (mod >= 5 && mod < 6.2) y = 17;
+    else if (mod >= 6.2 && mod < 7.5) y = 3;
+    else if (mod >= 7.5 && mod < 8.5) y = 12;
+
+    ecgPoints.push(y);
+    if (ecgPoints.length > ecgCanvas.width) ecgPoints.shift();
+
+    ecgCtx.beginPath();
+    for (let i = 0; i < ecgPoints.length; i++) {
+        if (i === 0) ecgCtx.moveTo(i, ecgPoints[i]);
+        else ecgCtx.lineTo(i, ecgPoints[i]);
+    }
+    ecgCtx.stroke();
+
+    requestAnimationFrame(drawECG);
+}
+requestAnimationFrame(drawECG);
+
+/* ==========================================================================
+   MATRIX RAIN ENGINE (Optimized)
+   ========================================================================== */
+const matrixCanvas = document.getElementById("matrixCanvas");
+const mCtx = matrixCanvas.getContext("2d");
+
+const baseLovePhrases = KONTEN.frasaHujan;
+
+let mFontSize = 16;
+let mColumns = 0;
+let mStreams = [];
+let matrixActive = true;
+let matrixIntervalId = null;
+
+/* Apa yang benar-benar diketik di kotak input. */
+function getRawInput() {
+    const input = document.getElementById("recipientInput");
+    return (input && input.value.trim()) || "";
+}
+
+/* Membersihkan tulisan biar perbandingan nama nggak rewel:
+   huruf kecil semua, spasi ganda dirapikan. */
+function normalkan(teks) {
+    return (teks || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/* Cek apakah nama yang diketik termasuk yang kamu izinkan. */
+function namaDiterima(teks) {
+    const kunci = KONTEN.kunci || {};
+    if (!kunci.aktif) return true;
+    const daftar = (kunci.namaDiizinkan || []).map(normalkan);
+    return daftar.includes(normalkan(teks));
+}
+
+/* Nama yang dipakai di seluruh website. */
+function getTargetName() {
+    const kunci = KONTEN.kunci || {};
+    const diketik = getRawInput();
+    if (kunci.aktif && kunci.namaTampil) return kunci.namaTampil;
+    return diketik;
+}
+
+function getActivePhrases() {
+    const name = getTargetName();
+    if (!name) return baseLovePhrases;
+    return [
+        ...baseLovePhrases,
+        ...KONTEN.frasaHujanBernama.map(t => isi(t, name))
+    ];
+}
+
+function initMatrixStreams() {
+    matrixCanvas.width = window.innerWidth;
+    matrixCanvas.height = window.innerHeight;
+    mFontSize = Math.max(14, Math.min(18, Math.floor(window.innerWidth / 35)));
+    mColumns = Math.floor(matrixCanvas.width / mFontSize);
+    mStreams = [];
+
+    const phrases = getActivePhrases();
+
+    for (let i = 0; i < mColumns; i++) {
+        const p = phrases[Math.floor(Math.random() * phrases.length)];
+        mStreams[i] = {
+            phrase: p,
+            charIndex: Math.floor(Math.random() * p.length),
+            y: Math.floor(Math.random() * (matrixCanvas.height / mFontSize)),
+            speed: 0.45 + Math.random() * 0.65
+        };
+    }
+}
+initMatrixStreams();
+window.addEventListener("resize", initMatrixStreams);
+
+function drawMatrix() {
+    if (!matrixActive) return;
+
+    mCtx.fillStyle = "rgba(4, 2, 6, 0.18)";
+    mCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || "#ff2a8d";
+    mCtx.font = `600 ${mFontSize}px 'Fira Code', monospace`;
+
+    const phrases = getActivePhrases();
+
+    for (let i = 0; i < mStreams.length; i++) {
+        const s = mStreams[i];
+        const x = i * mFontSize;
+        const currentY = Math.floor(s.y) * mFontSize;
+
+        const char = s.phrase[s.charIndex % s.phrase.length];
+        s.charIndex++;
+
+        // White glowing leading char (zero shadowBlur for high FPS)
+        if (currentY >= 0 && currentY <= matrixCanvas.height + mFontSize) {
+            mCtx.fillStyle = "#ffffff";
+            mCtx.fillText(char, x, currentY);
+
+            // Trailing colored chars
+            mCtx.fillStyle = primaryColor;
+            for (let trail = 1; trail < 4; trail++) {
+                const trailChar = s.phrase[(s.charIndex - trail + s.phrase.length * 10) % s.phrase.length];
+                const trailY = currentY - (trail * mFontSize);
+                if (trailY >= 0) {
+                    mCtx.fillText(trailChar, x, trailY);
+                }
+            }
+        }
+
+        s.y += s.speed;
+
+        if (currentY > matrixCanvas.height + (mFontSize * 5) && Math.random() > 0.94) {
+            s.y = 0;
+            s.phrase = phrases[Math.floor(Math.random() * phrases.length)];
+            s.charIndex = 0;
+            s.speed = 0.45 + Math.random() * 0.65;
+        }
+    }
+}
+matrixIntervalId = setInterval(drawMatrix, 38);
+
+/* ==========================================================================
+   ULTRA-OPTIMIZED 3D PARTICLE HEART (Additive Blending · 60-120 FPS)
+   ========================================================================== */
+const heartCanvas = document.getElementById("heartCanvas");
+const hCtx = heartCanvas.getContext("2d");
+
+let particles = [];
+const TOTAL_PARTICLES = 1100; // Optimal performance & high density
+let heartAngleX = 0, heartAngleY = 0;
+let targetHeartAngleX = 0, targetHeartAngleY = 0;
+let heartPulseScale = 1;
+let isHeartActive = false;
+
+class Heart3DParticle {
+    constructor() {
+        this.resetTarget();
+        this.x = (Math.random() - 0.5) * window.innerWidth * 1.4;
+        this.y = (Math.random() - 0.5) * window.innerHeight * 1.4;
+        this.z = (Math.random() - 0.5) * 600;
+        this.size = 1.2 + Math.random() * 2.0;
+        this.speed = 0.045 + Math.random() * 0.045;
+        this.alpha = 0.4 + Math.random() * 0.6;
+        this.isAccent = Math.random() < 0.16;
     }
 
-    const innerCount = 6;
-    for (let i = 0; i < innerCount; i++) {
-      const angle = (360 / innerCount) / 2 + i * (360 / innerCount) + (Math.random() * 5 - 2.5);
-      g += `<g transform="rotate(${angle.toFixed(1)})">` +
-           `<path d="${petalPath(29, 21)}" fill="url(#roseInner)" stroke="#12308F" stroke-width="0.9" stroke-opacity="0.3"/>` +
-           `</g>`;
+    resetTarget() {
+        const t = Math.random() * Math.PI * 2;
+        const hx = 16 * Math.pow(Math.sin(t), 3);
+        const hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+        const hz = (Math.random() - 0.5) * 11 * Math.sin(t);
+
+        const scale = Math.min(window.innerWidth, window.innerHeight) * 0.0185;
+        this.tx = hx * scale;
+        this.ty = hy * scale;
+        this.tz = hz * scale * 2.4;
     }
 
-    g += `<circle r="6.5" fill="url(#roseCenter)"/>`;
-    g += `</g>`;
-    return g;
-  }
-
-  function buildBouquetSVG() {
-    const fanCx = 200, fanCy = 190;
-
-    /* --- starburst paper wrap (black + gold, like the reference photo) --- */
-    let fan = `<g transform="translate(${fanCx},${fanCy})">`;
-    const spikeCount = 18;
-    for (let i = 0; i < spikeCount; i++) {
-      const angle = i * (360 / spikeCount);
-      const long = i % 2 === 0;
-      const len = long ? 195 + Math.random() * 12 : 165 + Math.random() * 10;
-      const wid = long ? 58 : 46;
-      const fill = i % 3 === 0 ? '#1B1930' : '#151220';
-      fan += makeSpike(angle, len, wid, fill, '#D8AE55', 2.4);
+    update() {
+        this.x += (this.tx * heartPulseScale - this.x) * this.speed;
+        this.y += (this.ty * heartPulseScale - this.y) * this.speed;
+        this.z += (this.tz - this.z) * this.speed;
     }
-    // thin gold-only spikes peeking between the black paper
-    for (let i = 0; i < spikeCount; i++) {
-      const angle = i * (360 / spikeCount) + (360 / spikeCount) / 2;
-      fan += makeSpike(angle, 140 + Math.random() * 10, 14, 'none', '#E7C170', 2);
+}
+
+function initHeartParticles() {
+    heartCanvas.width = window.innerWidth;
+    heartCanvas.height = window.innerHeight;
+    particles = [];
+    for (let i = 0; i < TOTAL_PARTICLES; i++) {
+        particles.push(new Heart3DParticle());
     }
-    // paint-splatter dots for texture
-    let dots = '';
-    for (let i = 0; i < 30; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const r = 70 + Math.random() * 110;
-      const x = (Math.cos(a) * r).toFixed(1);
-      const y = (Math.sin(a) * r).toFixed(1);
-      const rad = (0.8 + Math.random() * 1.8).toFixed(1);
-      dots += `<circle cx="${x}" cy="${y}" r="${rad}" fill="#F4F2EE" opacity="${(0.35 + Math.random() * 0.45).toFixed(2)}"/>`;
-    }
-    fan += dots + `</g>`;
+}
+initHeartParticles();
+window.addEventListener("resize", initHeartParticles);
 
-    /* --- rose cluster (7 tangkai) --- */
-    const roses = [
-      makeRose(200, 150, 1.05, 0),
-      makeRose(142, 187, 0.92, -8),
-      makeRose(258, 187, 0.92, 8),
-      makeRose(168, 227, 1.0, -4),
-      makeRose(232, 227, 1.0, 4),
-      makeRose(118, 152, 0.78, -14),
-      makeRose(282, 152, 0.78, 14),
-    ].join('');
-
-    /* --- ribbon band + bow (left plain, no printed text) --- */
-    const ribbon = `
-      <g>
-        <rect x="103" y="215" width="194" height="34" rx="9" fill="url(#ribbonGrad)" stroke="#12308F" stroke-width="1.2"/>
-        <rect x="103" y="215" width="194" height="8" rx="4" fill="#BFD6FF" opacity="0.55"/>
-        <g transform="translate(112,232)">
-          <path d="M0,0 C -20,-16 -34,-4 -20,10 C -8,18 0,10 0,0 Z" fill="url(#roseInner)" stroke="#12308F" stroke-width="1"/>
-          <path d="M0,0 C 20,-16 34,-4 20,10 C 8,18 0,10 0,0 Z" fill="url(#roseInner)" stroke="#12308F" stroke-width="1"/>
-          <rect x="-7" y="-7" width="14" height="14" rx="4" fill="url(#roseOuter)" stroke="#0C1E63" stroke-width="1"/>
-        </g>
-      </g>`;
-
-    /* --- little butterfly accent --- */
-    const butterfly = `
-      <g transform="translate(258,246) rotate(-6)">
-        <ellipse cx="0" cy="0" rx="2.6" ry="9" fill="#1B1930"/>
-        <path d="M-1,-6 C -20,-22 -34,-10 -18,2 C -10,7 -3,2 -1,-6 Z" fill="#F4F2EE" stroke="#D8AE55" stroke-width="1"/>
-        <path d="M1,-6 C 20,-22 34,-10 18,2 C 10,7 3,2 1,-6 Z" fill="#F4F2EE" stroke="#D8AE55" stroke-width="1"/>
-        <path d="M-1,2 C -14,10 -22,20 -10,22 C -4,22 -1,14 -1,2 Z" fill="#DCE8FF" stroke="#D8AE55" stroke-width="0.8"/>
-        <path d="M1,2 C 14,10 22,20 10,22 C 4,22 1,14 1,2 Z" fill="#DCE8FF" stroke="#D8AE55" stroke-width="0.8"/>
-      </g>`;
-
-    /* --- gathered paper handle beneath the ribbon --- */
-    const handle = `
-      <g>
-        <path d="M150,248 L250,248 L222,438 L178,438 Z" fill="url(#handleGrad)"/>
-        <path d="M150,248 L178,438" stroke="#D8AE55" stroke-width="3" fill="none"/>
-        <path d="M250,248 L222,438" stroke="#D8AE55" stroke-width="3" fill="none"/>
-        <path d="M188,300 L212,300" stroke="#3A3550" stroke-width="2" opacity="0.5"/>
-        <path d="M185,360 L215,360" stroke="#3A3550" stroke-width="2" opacity="0.5"/>
-      </g>`;
-
-    const defs = `
-      <defs>
-        <radialGradient id="roseOuter" cx="35%" cy="20%" r="85%">
-          <stop offset="0%" stop-color="#C7DAFF"/>
-          <stop offset="35%" stop-color="#5B8DFF"/>
-          <stop offset="72%" stop-color="#2A4FCB"/>
-          <stop offset="100%" stop-color="#11205E"/>
-        </radialGradient>
-        <radialGradient id="roseInner" cx="40%" cy="25%" r="88%">
-          <stop offset="0%" stop-color="#EEF4FF"/>
-          <stop offset="42%" stop-color="#8FB2FF"/>
-          <stop offset="100%" stop-color="#2C55C9"/>
-        </radialGradient>
-        <radialGradient id="roseCenter" cx="35%" cy="30%" r="75%">
-          <stop offset="0%" stop-color="#F6F9FF"/>
-          <stop offset="100%" stop-color="#6F97F5"/>
-        </radialGradient>
-        <linearGradient id="ribbonGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#4E78EE"/>
-          <stop offset="100%" stop-color="#1F3FA0"/>
-        </linearGradient>
-        <linearGradient id="handleGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#231F33"/>
-          <stop offset="100%" stop-color="#0C0A14"/>
-        </linearGradient>
-      </defs>`;
-
-    return `<svg viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg">` +
-           defs + handle + fan + roses + butterfly +
-           `</svg>`;
-  }
-
-  const bouquetEl = document.getElementById('bouquet');
-  bouquetEl.innerHTML = buildBouquetSVG();
-
-  /* ------------------------------------------------------------------ *
-   *  3. DRAG THE BOUQUET INTO THE BASKET
-   * ------------------------------------------------------------------ */
-
-  const basketEl = document.getElementById('basket');
-  const sparkleLayer = document.getElementById('sparkleLayer');
-  const yeayEl = document.getElementById('yeayText');
-  const questionCard = document.getElementById('questionCard');
-
-  let currentDX = 0, currentDY = 0;
-  let delivered = false;
-  let dragging = false;
-  let startX = 0, startY = 0, originX = 0, originY = 0;
-
-  function setBouquetTransform(dx, dy, scale) {
-    bouquetEl.style.transform =
-      `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${scale === undefined ? 1 : scale})`;
-  }
-
-  function isOverBasket() {
-    const bRect = bouquetEl.getBoundingClientRect();
-    const basketRect = basketEl.getBoundingClientRect();
-    const cx = bRect.left + bRect.width / 2;
-    const cy = bRect.top + bRect.height * 0.72;
-    const pad = 16;
-    return (
-      cx > basketRect.left - pad && cx < basketRect.right + pad &&
-      cy > basketRect.top - pad && cy < basketRect.bottom + pad
-    );
-  }
-
-  function onPointerDown(e) {
-    if (delivered) return;
-    bouquetEl.classList.remove('idle-hint');
-    bouquetEl.setPointerCapture(e.pointerId);
-    bouquetEl.classList.add('dragging');
-    dragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    originX = currentDX;
-    originY = currentDY;
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-  }
-
-  function onPointerMove(e) {
-    if (!dragging) return;
-    currentDX = originX + (e.clientX - startX);
-    currentDY = originY + (e.clientY - startY);
-    setBouquetTransform(currentDX, currentDY);
-    basketEl.classList.toggle('hover', isOverBasket());
-  }
-
-  function onPointerUp() {
-    if (!dragging) return;
-    dragging = false;
-    window.removeEventListener('pointermove', onPointerMove);
-    window.removeEventListener('pointerup', onPointerUp);
-    bouquetEl.classList.remove('dragging');
-    basketEl.classList.remove('hover');
-
-    if (isOverBasket()) {
-      placeInBasket();
-    }
-    // kalau bukan di keranjang, buketnya tetap diam di posisi terakhir dilepas
-  }
-
-  bouquetEl.addEventListener('pointerdown', onPointerDown);
-
-  bouquetEl.addEventListener('keydown', (e) => {
-    if (delivered) return;
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      placeInBasket();
-    }
-  });
-
-  window.addEventListener('resize', () => {
-    if (!dragging && !delivered) {
-      currentDX = 0;
-      currentDY = 0;
-      bouquetEl.style.transition = 'none';
-      setBouquetTransform(0, 0, 1);
-      requestAnimationFrame(() => { bouquetEl.style.transition = ''; });
-    }
-  });
-
-  /* ------------------------------------------------------------------ *
-   *  4. SPARKLES + "YEAY"
-   * ------------------------------------------------------------------ */
-
-  function spawnSparkles() {
-    const symbols = ['✦', '✧', '❀', '✿', '⋆'];
-    const colors = ['var(--gold-500)', 'var(--blue-500)', 'var(--pink-500)', 'var(--gold-300)'];
-
-    for (let i = 0; i < 22; i++) {
-      const s = document.createElement('span');
-      s.className = 'sparkle';
-      s.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 40 + Math.random() * 75;
-      s.style.setProperty('--dx', (Math.cos(angle) * dist).toFixed(0) + 'px');
-      s.style.setProperty('--dy', (Math.sin(angle) * dist - 20).toFixed(0) + 'px');
-      s.style.setProperty('--size', (12 + Math.random() * 14).toFixed(0) + 'px');
-      s.style.setProperty('--spark-color', colors[Math.floor(Math.random() * colors.length)]);
-      s.style.animationDelay = (Math.random() * 0.15).toFixed(2) + 's';
-
-      sparkleLayer.appendChild(s);
-      setTimeout(() => s.remove(), 1200);
-    }
-  }
-
-  /* ------------------------------------------------------------------ *
-   *  5. PLACE BOUQUET → SPARKLE → SWITCH TO DELIVERY SCENE
-   * ------------------------------------------------------------------ */
-
-  function placeInBasket() {
-    if (delivered) return;
-    delivered = true;
-
-    bouquetEl.setAttribute('aria-hidden', 'true');
-    bouquetEl.tabIndex = -1;
-    if (questionCard) questionCard.style.opacity = '0';
-
-    const bRect = bouquetEl.getBoundingClientRect();
-    const basketRect = basketEl.getBoundingClientRect();
-    const targetX = currentDX + (basketRect.left + basketRect.width / 2) - (bRect.left + bRect.width / 2);
-    const targetY = currentDY + (basketRect.top + basketRect.height * 0.32) - (bRect.top + bRect.height / 2);
-
-    bouquetEl.style.transition = 'transform 0.45s cubic-bezier(0.5,-0.3,0.7,1)';
-    setBouquetTransform(targetX, targetY, 0.16);
-
-    spawnSparkles();
-    yeayEl.classList.add('show');
-
-    setTimeout(() => bouquetEl.classList.add('delivered'), 420);
-    setTimeout(() => goToDeliveryScene(), 2000);
-  }
-
-  /* ------------------------------------------------------------------ *
-   *  6. DELIVERY SCENE — TRUCK DRIVES TO THE HOUSE
-   * ------------------------------------------------------------------ */
-
-  const gardenScene = document.getElementById('scene-garden');
-  const deliveryScene = document.getElementById('scene-delivery');
-  const truckEl = document.getElementById('truck');
-  const deliveredBouquetEl = document.getElementById('deliveredBouquet');
-  const deliveryMessageEl = document.getElementById('deliveryMessage');
-  const restartBtn = document.getElementById('restartBtn');
-
-  function goToDeliveryScene() {
-    gardenScene.classList.remove('is-active');
-    deliveryScene.classList.add('is-active');
-    setTimeout(() => truckEl.classList.add('drive'), 300);
-  }
-
-  truckEl.addEventListener('animationend', (e) => {
-    if (e.animationName === 'driveIn' || e.animationName === 'driveInSmall') {
-      deliveredBouquetEl.classList.add('show');
-      setTimeout(() => deliveryMessageEl.classList.add('show'), 450);
-    }
-  });
-
-  function resetExperience() {
-    deliveryScene.classList.remove('is-active');
-    gardenScene.classList.add('is-active');
-
-    deliveryMessageEl.classList.remove('show');
-    deliveredBouquetEl.classList.remove('show');
-    truckEl.classList.remove('drive');
-    void truckEl.offsetWidth; // restart CSS animation next time
-
-    sparkleLayer.innerHTML = '';
-    yeayEl.classList.remove('show');
-
-    delivered = false;
-    currentDX = 0;
-    currentDY = 0;
-    bouquetEl.classList.remove('delivered');
-    bouquetEl.classList.add('idle-hint');
-    bouquetEl.removeAttribute('aria-hidden');
-    bouquetEl.tabIndex = 0;
-    if (questionCard) questionCard.style.opacity = '';
-    bouquetEl.style.transition = 'transform 0.6s cubic-bezier(0.34,1.56,0.64,1)';
-    setBouquetTransform(0, 0, 1);
-  }
-
-  restartBtn.addEventListener('click', resetExperience);
-
-  /* gentle idle wiggle to hint that the bouquet can be dragged */
-  bouquetEl.classList.add('idle-hint');
+// Smooth 3D tilt tracking
+window.addEventListener("mousemove", (e) => {
+    if (!isHeartActive) return;
+    targetHeartAngleY = ((e.clientX / window.innerWidth) - 0.5) * 0.75;
+    targetHeartAngleX = -((e.clientY / window.innerHeight) - 0.5) * 0.75;
 });
+
+window.addEventListener("deviceorientation", (e) => {
+    if (!isHeartActive || !e.gamma) return;
+    targetHeartAngleY = (e.gamma / 45) * 0.6;
+    targetHeartAngleX = -(e.beta / 45) * 0.6;
+});
+
+function renderHeart3D() {
+    if (!isHeartActive) {
+        requestAnimationFrame(renderHeart3D);
+        return;
+    }
+
+    hCtx.clearRect(0, 0, heartCanvas.width, heartCanvas.height);
+
+    // Hardware accelerated additive blending (zero CPU shadow overhead)
+    hCtx.globalCompositeOperation = "lighter";
+
+    heartAngleX += (targetHeartAngleX - heartAngleX) * 0.05;
+    heartAngleY += (targetHeartAngleY - heartAngleY) * 0.05;
+
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || "#ff2a8d";
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || "#ffb3d9";
+
+    const cx = heartCanvas.width / 2;
+    const cy = heartCanvas.height * 0.42;
+    const fov = 400;
+
+    const cosY = Math.cos(heartAngleY), sinY = Math.sin(heartAngleY);
+    const cosX = Math.cos(heartAngleX), sinX = Math.sin(heartAngleX);
+
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.update();
+
+        // 3D rotation
+        let x1 = p.x * cosY - p.z * sinY;
+        let z1 = p.z * cosY + p.x * sinY;
+
+        let y2 = p.y * cosX - z1 * sinX;
+        let z2 = z1 * cosX + p.y * sinX;
+
+        // Fast Perspective projection
+        const scale = fov / (fov + z2 + 280);
+        const projX = cx + x1 * scale;
+        const projY = cy + y2 * scale;
+
+        if (scale > 0 && projX >= 0 && projX <= heartCanvas.width && projY >= 0 && projY <= heartCanvas.height) {
+            hCtx.beginPath();
+            const radius = Math.max(0.7, p.size * scale);
+            hCtx.arc(projX, projY, radius, 0, Math.PI * 2);
+            hCtx.fillStyle = p.isAccent ? accentColor : primaryColor;
+            hCtx.globalAlpha = Math.min(1, Math.max(0.2, scale * p.alpha));
+            hCtx.fill();
+        }
+    }
+
+    hCtx.globalCompositeOperation = "source-over";
+    hCtx.globalAlpha = 1;
+    requestAnimationFrame(renderHeart3D);
+}
+requestAnimationFrame(renderHeart3D);
+
+// Dynamic Heartbeat expansion loop
+function triggerHeartbeatPulse() {
+    if (!isHeartActive) return;
+    heartPulseScale = 1.16;
+    playHeartbeatThump();
+    setTimeout(() => { heartPulseScale = 0.96; }, 130);
+    setTimeout(() => { heartPulseScale = 1.10; }, 240);
+    setTimeout(() => { heartPulseScale = 1.0; }, 380);
+}
+
+/* ==========================================================================
+   THEME SELECTOR & SOUND TOGGLE HANDLERS
+   ========================================================================== */
+document.querySelectorAll(".themeDot").forEach(dot => {
+    dot.addEventListener("click", () => {
+        document.querySelectorAll(".themeDot").forEach(d => d.classList.remove("active"));
+        dot.classList.add("active");
+        const theme = dot.dataset.color;
+        if (theme === "pink") {
+            document.documentElement.removeAttribute("data-theme");
+        } else {
+            document.documentElement.setAttribute("data-theme", theme);
+        }
+        playKeyClick(1200);
+    });
+});
+
+const soundToggle = document.getElementById("soundToggle");
+if (soundToggle) {
+    soundToggle.addEventListener("click", () => {
+        soundEnabled = !soundEnabled;
+        soundToggle.textContent = soundEnabled ? KONTEN.audioNyala : KONTEN.audioMati;
+        if (!soundEnabled && ambientGain) {
+            ambientGain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+        } else if (soundEnabled && audioCtx) {
+            startAmbientDrone();
+        }
+    });
+}
+
+// URL Params parsing
+const urlParams = new URLSearchParams(window.location.search);
+const paramName = urlParams.get("to") || urlParams.get("name") || urlParams.get("for");
+const recipientInput = document.getElementById("recipientInput");
+if (paramName && recipientInput) {
+    recipientInput.value = paramName;
+}
+/* Catatan: kalau KONTEN.kunci.aktif = true, nama dari link (?to=...) tetap
+   harus cocok dengan daftar namaDiizinkan. Jadi link nggak bisa dipakai
+   buat nembus gerbang. */
+
+/* ==========================================================================
+   TEXT SCRAMBLER & STORY SEQUENCE
+   ========================================================================== */
+const scrambleChars = "01#%$@!*&^~+=<>{}[]?/\\|abcdefghijklmnopqrstuvwxyz";
+
+function scrambleText(element, finalText, duration = 1400) {
+    return new Promise(resolve => {
+        const length = finalText.length;
+        const interval = 45;
+        const totalSteps = duration / interval;
+        let step = 0;
+
+        const timer = setInterval(() => {
+            step++;
+            const progress = step / totalSteps;
+            const solvedCount = Math.floor(progress * length);
+
+            let display = "";
+            for (let i = 0; i < length; i++) {
+                if (i < solvedCount) {
+                    display += finalText[i];
+                } else if (finalText[i] === " " || finalText[i] === "\n") {
+                    display += finalText[i];
+                } else {
+                    const randChar = scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                    display += `<span class="charFlicker">${randChar}</span>`;
+                }
+            }
+
+            element.innerHTML = display;
+            playKeyClick(650 + Math.random() * 500);
+
+            if (step >= totalSteps) {
+                clearInterval(timer);
+                element.innerHTML = finalText;
+                resolve();
+            }
+        }, interval);
+    });
+}
+
+function wait(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+function showPhase(phaseId) {
+    document.querySelectorAll(".phaseCard, .cinemaCard").forEach(p => p.classList.remove("active"));
+    const target = document.getElementById(phaseId);
+    if (target) target.classList.add("active");
+}
+
+function triggerShockwave() {
+    const flash = document.getElementById("shockwaveFlash");
+    if (!flash) return;
+    flash.style.opacity = "0.75";
+    setTimeout(() => { flash.style.opacity = "0"; }, 200);
+}
+
+// Lightweight Particle Burst System
+function spawnHeartBurst(originX, originY, count = 22) {
+    const symbols = KONTEN.simbolPartikel;
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement("div");
+        p.className = "loveParticle";
+        p.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        p.style.left = originX + "px";
+        p.style.top = originY + "px";
+        
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 70 + Math.random() * 220;
+        const dx = Math.cos(angle) * dist + "px";
+        const dy = Math.sin(angle) * dist + "px";
+        const rot = (Math.random() * 360) + "deg";
+        
+        p.style.setProperty("--dx", dx);
+        p.style.setProperty("--dy", dy);
+        p.style.setProperty("--rot", rot);
+        document.body.appendChild(p);
+
+        setTimeout(() => p.remove(), 1500);
+    }
+}
+
+/* ==========================================================================
+   MENERAPKAN TEKS DARI BLOK KONTEN KE HALAMAN
+   ========================================================================== */
+function terapkanTeksStatis() {
+    const set = (id, teks, html = false) => {
+        const el = document.getElementById(id);
+        if (!el || teks == null) return;
+        if (html) el.innerHTML = teks; else el.textContent = teks;
+    };
+    const setBy = (selector, teks) => {
+        const el = document.querySelector(selector);
+        if (el && teks != null) el.textContent = teks;
+    };
+
+    // Layar 1
+    setBy("#phase1 .terminalTag", KONTEN.tagAwal);
+    setBy("#phase1 .mainTitle", KONTEN.judulAwal);
+    setBy("#phase1 .subtitle", KONTEN.subjudulAwal);
+    setBy("#phase1 .inputLabel", KONTEN.labelInput);
+    const input = document.getElementById("recipientInput");
+    if (input && KONTEN.placeholderInput) input.placeholder = KONTEN.placeholderInput;
+    set("startDecryptionBtn", KONTEN.tombolMulai);
+
+    // HUD atas
+    set("statusLabel", KONTEN.statusSistem);
+    set("soundToggle", KONTEN.audioNyala);
+
+    // Layar 2
+    set("cinemaPill", KONTEN.pillAwal);
+    set("progressLabel", KONTEN.labelProgresAwal);
+
+    // Layar 3
+    setBy("#phase3 .terminalTag", KONTEN.tagAkhir);
+    setBy("#phase3 .heartCenterBanner", KONTEN.bannerAkhir);
+    set("romanticNote", KONTEN.dedikasi, true);
+    setBy("#phase3 .interactiveHint span", KONTEN.petunjuk);
+    set("pulseHeartBtn", KONTEN.tombolPulse);
+    set("starShowerBtn", KONTEN.tombolStar);
+    set("shareLinkBtn", KONTEN.tombolShare);
+}
+terapkanTeksStatis();
+
+/* ==========================================================================
+   STORY PROGRESSION
+   ========================================================================== */
+const startBtn = document.getElementById("startDecryptionBtn");
+
+/* Menampilkan pesan error di bawah kotak input + efek getar. */
+function tampilkanErrorNama(pesan) {
+    const box = document.getElementById("nameError");
+    const wrapper = document.querySelector(".cyberInputWrapper");
+
+    if (box) {
+        box.textContent = pesan;
+        box.classList.add("show");
+    }
+    if (wrapper) {
+        wrapper.classList.remove("shake");
+        void wrapper.offsetWidth;
+        wrapper.classList.add("shake");
+    }
+    if (navigator.vibrate) navigator.vibrate([60, 50, 60]);
+    playKeyClick(220);
+}
+
+function sembunyikanErrorNama() {
+    const box = document.getElementById("nameError");
+    if (box) box.classList.remove("show");
+}
+
+/* Dipanggil tombol & tombol Enter. */
+function cobaMasuk() {
+    const kunci = KONTEN.kunci || {};
+    const diketik = getRawInput();
+
+    if (kunci.aktif) {
+        if (!diketik) {
+            tampilkanErrorNama(kunci.pesanKosong || "ISI NAMANYA DULU");
+            return;
+        }
+        if (!namaDiterima(diketik)) {
+            tampilkanErrorNama(kunci.pesanSalah || "AKSES DITOLAK");
+            return;
+        }
+    }
+
+    sembunyikanErrorNama();
+    initAudio();
+    runDecryptionStory();
+}
+
+if (startBtn) {
+    startBtn.addEventListener("click", cobaMasuk);
+}
+
+if (recipientInput) {
+    recipientInput.addEventListener("keydown", e => {
+        if (e.key === "Enter") cobaMasuk();
+    });
+    /* Pesan error hilang begitu dia mulai ngetik ulang. */
+    recipientInput.addEventListener("input", sembunyikanErrorNama);
+}
+
+async function runDecryptionStory() {
+    const name = getTargetName();
+    showPhase("phase2");
+
+    const cinemaWord = document.getElementById("cinemaWord");
+    const cinemaPill = document.getElementById("cinemaPill");
+    const progressFill = document.getElementById("progressFill");
+    const progressLabel = document.getElementById("progressLabel");
+
+    function setProgress(pct, label) {
+        if (progressFill) progressFill.style.width = pct + "%";
+        if (progressLabel) progressLabel.textContent = isi(label, name);
+    }
+
+    // --- Putar setiap adegan dari KONTEN.adegan -------------------------
+    for (const adegan of KONTEN.adegan) {
+        targetBpm = adegan.bpm || 100;
+
+        const pill = (!name && adegan.pillTanpaNama) ? adegan.pillTanpaNama : adegan.pill;
+        if (cinemaPill) cinemaPill.textContent = isi(pill, name);
+
+        setProgress(adegan.persen, adegan.label);
+
+        const teks = (!name && adegan.teksTanpaNama) ? adegan.teksTanpaNama : adegan.teks;
+        await scrambleText(cinemaWord, isi(teks, name), adegan.durasi || 1100);
+
+        playHeartbeatThump();
+        await wait(adegan.jeda || 800);
+    }
+
+    // --- Kata pamungkas yang muncul satu per satu -----------------------
+    targetBpm = KONTEN.bpmFinal || 160;
+    if (cinemaPill) cinemaPill.textContent = isi(KONTEN.pillFinal, name);
+    setProgress(100, KONTEN.labelFinal);
+
+    const kataFinal = [...KONTEN.kataPamungkas];
+    if (name && KONTEN.kataNama) {
+        kataFinal.push({ teks: KONTEN.kataNama, partikel: 36, jeda: 800 });
+    }
+
+    for (const kata of kataFinal) {
+        cinemaWord.textContent = isi(kata.teks, name);
+        cinemaWord.classList.remove("wordPop");
+        void cinemaWord.offsetWidth;
+        cinemaWord.classList.add("wordPop");
+        triggerShockwave();
+        playHeartbeatThump();
+        spawnHeartBurst(window.innerWidth / 2, window.innerHeight * 0.45, kata.partikel || 20);
+        await wait(kata.jeda || 500);
+    }
+
+    // --- Matikan hujan kode, nyalakan hati 3D ---------------------------
+    matrixActive = false;
+    if (matrixIntervalId) clearInterval(matrixIntervalId);
+    matrixCanvas.style.opacity = "0";
+
+    isHeartActive = true;
+    const heartCanvasEl = document.getElementById("heartCanvas");
+    if (heartCanvasEl) heartCanvasEl.style.opacity = "1";
+
+    const recipientFinalName = document.getElementById("recipientFinalName");
+    if (recipientFinalName) {
+        recipientFinalName.textContent = name
+            ? isi(KONTEN.namaAkhir, name)
+            : KONTEN.namaAkhirTanpaNama;
+    }
+
+    showPhase("phase3");
+    boostAmbientHarmonics();
+    playCelestialChimes();
+    triggerShockwave();
+    spawnHeartBurst(window.innerWidth / 2, window.innerHeight * 0.42, 45);
+
+    setInterval(triggerHeartbeatPulse, 1900);
+}
+
+/* ==========================================================================
+   INTERACTIVE BUTTONS & CANVAS CLICKS
+   ========================================================================== */
+const pulseHeartBtn = document.getElementById("pulseHeartBtn");
+if (pulseHeartBtn) {
+    pulseHeartBtn.addEventListener("click", e => {
+        triggerHeartbeatPulse();
+        spawnHeartBurst(e.clientX || window.innerWidth / 2, e.clientY || window.innerHeight / 2, 25);
+        showToast(KONTEN.toastPulse);
+    });
+}
+
+const starShowerBtn = document.getElementById("starShowerBtn");
+if (starShowerBtn) {
+    starShowerBtn.addEventListener("click", () => {
+        playCelestialChimes();
+        for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+                spawnHeartBurst(Math.random() * window.innerWidth, Math.random() * (window.innerHeight * 0.65), 18);
+            }, i * 160);
+        }
+        showToast(KONTEN.toastStar);
+    });
+}
+
+window.addEventListener("click", e => {
+    if (!isHeartActive) return;
+    if (e.target.closest("button") || e.target.closest("input") || e.target.closest(".themeDot")) return;
+    triggerHeartbeatPulse();
+    spawnHeartBurst(e.clientX, e.clientY, 15);
+});
+
+/* ==========================================================================
+   SHARE LINK
+   ========================================================================== */
+const toast = document.getElementById("toast");
+function showToast(msg) {
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2800);
+}
+
+const shareLinkBtn = document.getElementById("shareLinkBtn");
+if (shareLinkBtn) {
+    shareLinkBtn.addEventListener("click", () => {
+        const name = getTargetName();
+        const baseUrl = window.location.origin + window.location.pathname;
+        const shareUrl = name ? `${baseUrl}?to=${encodeURIComponent(name)}` : baseUrl;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast(KONTEN.toastShare);
+            }).catch(() => fallbackCopy(shareUrl));
+        } else {
+            fallbackCopy(shareUrl);
+        }
+    });
+}
+
+function fallbackCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.top = "-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+        document.execCommand("copy");
+        showToast(KONTEN.toastShare);
+    } catch (e) {}
+    document.body.removeChild(ta);
+}
