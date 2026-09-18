@@ -7,6 +7,29 @@
    ========================================================================== */
 const KONTEN = {
 
+  /* --- 0a. LAGU LATAR --------------------------------------------------
+     aktif     : true = lagu diputar. false = matikan lagu.
+     file      : nama file lagunya. Taruh file mp3-nya di folder yang sama
+                 dengan index.html, lalu tulis namanya persis di sini.
+                 Contoh: "lagu.mp3" atau "musik/lagu-kita.mp3"
+     volume    : 0 sampai 1. 0.35 = pelan, 1 = paling keras.
+     mulaiDetik: mulai dari detik ke berapa. Isi 0 kalau dari awal.
+                 Berguna kalau mau langsung ke bagian reff.
+     ulang     : true = lagu diulang terus sampai halaman ditutup.
+     fadeMasuk : lama suara naik pelan-pelan (milidetik). 0 = langsung keras.
+     matikanDrone: true = matikan dengungan sintetis bawaan biar nggak tabrakan
+                   sama lagunya. Sangat disarankan true.
+  -------------------------------------------------------------------- */
+  musik: {
+    aktif: true,
+    file: "snap_out_of_it.mp3",
+    volume: 0.45,
+    mulaiDetik: 0,
+    ulang: true,
+    fadeMasuk: 2500,
+    matikanDrone: true
+  },
+
   /* --- 0. GERBANG NAMA (cuma satu nama yang boleh masuk) --------------
      aktif        : true = wajib isi nama yang cocok. false = siapa pun boleh masuk.
      namaDiizinkan: daftar tulisan yang kamu terima. Isi lebih dari satu kalau
@@ -20,7 +43,7 @@ const KONTEN = {
   -------------------------------------------------------------------- */
   kunci: {
     aktif: true,
-    namaDiizinkan: ["nadya" , "Nadya" , "nara" , "Nara" , "Nadia"],
+    namaDiizinkan: ["nadya", "Nadya" , "nara", "Nara", "Nadia"],
     namaTampil: "Nadya",
     pesanSalah: "AKSES DITOLAK · PESAN INI BUKAN BUAT KAMU",
     pesanKosong: "ISI NAMANYA DULU DONG"
@@ -155,6 +178,97 @@ let audioCtx = null;
 let soundEnabled = true;
 let ambientOsc1 = null, ambientOsc2 = null, ambientGain = null;
 
+/* ==========================================================================
+   PEMUTAR LAGU LATAR
+   Pengaturannya ada di KONTEN.musik paling atas.
+   ========================================================================== */
+let bgMusic = null;
+let musikSudahJalan = false;
+let fadeTimer = null;
+
+function siapkanMusik() {
+    const m = KONTEN.musik || {};
+    if (!m.aktif || !m.file) return;
+
+    bgMusic = document.getElementById("bgMusic");
+    if (!bgMusic) return;
+
+    bgMusic.src = m.file;
+    bgMusic.loop = m.ulang !== false;
+    bgMusic.volume = 0;
+    bgMusic.preload = "auto";
+
+    bgMusic.addEventListener("error", () => {
+        console.warn(
+            "[Lagu] Gagal memuat '" + m.file + "'. " +
+            "Pastikan file-nya ada di folder yang sama dengan index.html " +
+            "dan namanya ditulis persis (termasuk .mp3)."
+        );
+    });
+}
+
+function mulaiMusik() {
+    const m = KONTEN.musik || {};
+    if (!m.aktif || !bgMusic || musikSudahJalan || !soundEnabled) return;
+
+    if (m.mulaiDetik) {
+        try { bgMusic.currentTime = m.mulaiDetik; } catch (e) {}
+    }
+
+    const p = bgMusic.play();
+    if (p && p.catch) {
+        p.catch(() => {
+            /* Browser menolak karena belum ada interaksi.
+               Nanti dicoba lagi otomatis saat user klik / tekan tombol. */
+            musikSudahJalan = false;
+        });
+    }
+    musikSudahJalan = true;
+    fadeVolume(m.volume != null ? m.volume : 0.45, m.fadeMasuk || 0);
+}
+
+/* Menaikkan / menurunkan volume pelan-pelan. */
+function fadeVolume(target, durasi) {
+    if (!bgMusic) return;
+    if (fadeTimer) clearInterval(fadeTimer);
+
+    target = Math.max(0, Math.min(1, target));
+    if (!durasi) { bgMusic.volume = target; return; }
+
+    const langkah = 40;
+    const total = Math.max(1, Math.round(durasi / langkah));
+    const awal = bgMusic.volume;
+    let n = 0;
+
+    fadeTimer = setInterval(() => {
+        n++;
+        const v = awal + (target - awal) * (n / total);
+        bgMusic.volume = Math.max(0, Math.min(1, v));
+        if (n >= total) {
+            clearInterval(fadeTimer);
+            fadeTimer = null;
+        }
+    }, langkah);
+}
+
+function hentikanMusik() {
+    if (!bgMusic) return;
+    fadeVolume(0, 600);
+    setTimeout(() => { if (bgMusic) bgMusic.pause(); }, 650);
+    musikSudahJalan = false;
+}
+
+siapkanMusik();
+
+/* Browser memblokir suara sampai user menyentuh halaman.
+   Jadi begitu ada klik / ketukan / tombol pertama, lagunya kita nyalakan. */
+["click", "touchstart", "keydown"].forEach(ev => {
+    window.addEventListener(ev, () => {
+        initAudio();
+        mulaiMusik();
+    }, { once: false, passive: true });
+});
+
 function initAudio() {
     if (!audioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -163,7 +277,9 @@ function initAudio() {
     if (audioCtx && audioCtx.state === "suspended") {
         audioCtx.resume();
     }
-    if (soundEnabled && !ambientGain) {
+    /* Dengungan sintetis dimatikan kalau lagu aktif, biar nggak tabrakan. */
+    const pakaiLagu = KONTEN.musik && KONTEN.musik.aktif && KONTEN.musik.matikanDrone;
+    if (soundEnabled && !ambientGain && !pakaiLagu) {
         startAmbientDrone();
     }
 }
@@ -585,10 +701,20 @@ if (soundToggle) {
     soundToggle.addEventListener("click", () => {
         soundEnabled = !soundEnabled;
         soundToggle.textContent = soundEnabled ? KONTEN.audioNyala : KONTEN.audioMati;
-        if (!soundEnabled && ambientGain) {
-            ambientGain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-        } else if (soundEnabled && audioCtx) {
-            startAmbientDrone();
+
+        const pakaiLagu = KONTEN.musik && KONTEN.musik.aktif && KONTEN.musik.matikanDrone;
+
+        if (!soundEnabled) {
+            if (ambientGain && audioCtx) {
+                ambientGain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+            }
+            hentikanMusik();
+        } else {
+            if (audioCtx && !pakaiLagu) startAmbientDrone();
+            if (bgMusic) {
+                musikSudahJalan = false;
+                mulaiMusik();
+            }
         }
     });
 }
